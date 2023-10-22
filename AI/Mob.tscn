@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://AI/Mob.gd" id="1_hbaqi"]
 [ext_resource type="Texture2D" uid="uid://cm5vii4gj70i1" path="res://AI/enemy_hawk.png" id="2_nxohl"]
-[ext_resource type="Texture2D" uid="uid://bot84i678ijb8" path="res://common/2d_light_texture.webp" id="3_udwpd"]
+[ext_resource type="Texture2D" uid="uid://p01v1rg12mwp" path="res://common/cov90_light_texture.png" id="3_1rxia"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_nsw57"]
 size = Vector2(64, 64)
@@ -34,8 +34,13 @@ visible = false
 shape = SubResource("CircleShape2D_lwmer")
 
 [node name="ConeOfVision" type="PointLight2D" parent="."]
-color = Color(1, 0, 0, 1)
+position = Vector2(0, -3.8147e-06)
+scale = Vector2(1.17188, 1.17188)
+color = Color(0, 1, 0, 0.498039)
 energy = 3.0
 shadow_enabled = true
-texture = ExtResource("3_udwpd")
-texture_scale = 5.0
+texture = ExtResource("3_1rxia")
+offset = Vector2(256, 0)
+
+[node name="DetectionTime" type="Timer" parent="."]
+wait_time = 2.0

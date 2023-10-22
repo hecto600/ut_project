@@ -1,12 +1,12 @@
 [gd_scene load_steps=10 format=3 uid="uid://cuglx6xxck5x4"]
 
-[ext_resource type="Texture2D" uid="uid://cj4ukoglm1idl" path="res://rooms/floor.png" id="1_lmsj0"]
+[ext_resource type="Texture2D" uid="uid://cj4ukoglm1idl" path="res://common/floor.png" id="1_u7yfx"]
 [ext_resource type="PackedScene" uid="uid://cqc4t6kiqjyjm" path="res://player/Player.tscn" id="2_18vdt"]
-[ext_resource type="Texture2D" uid="uid://cxmg6oqg8f7ku" path="res://rooms/box.png" id="2_st8qv"]
-[ext_resource type="PackedScene" uid="uid://b4ae2qj406or6" path="res://AI characters/Mob.tscn" id="3_wjy3y"]
+[ext_resource type="Texture2D" uid="uid://cxmg6oqg8f7ku" path="res://common/box.png" id="2_k5knd"]
+[ext_resource type="PackedScene" uid="uid://b4ae2qj406or6" path="res://AI/Mob.tscn" id="4_jq603"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_ogrx1"]
-texture = ExtResource("1_lmsj0")
+texture = ExtResource("1_u7yfx")
 texture_region_size = Vector2i(64, 64)
 0:0/0 = 0
 
@@ -18,7 +18,7 @@ sources/0 = SubResource("TileSetAtlasSource_ogrx1")
 polygon = PackedVector2Array(-64, -64, 64, -64, 64, 64, -64, 64)
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_fvm81"]
-texture = ExtResource("2_st8qv")
+texture = ExtResource("2_k5knd")
 texture_region_size = Vector2i(128, 128)
 0:0/0 = 0
 0:0/0/occlusion_layer_0/polygon = SubResource("OccluderPolygon2D_ljy8a")
@@ -47,10 +47,10 @@ layer_0/tile_data = PackedInt32Array(0, 0, 0, 65536, 0, 0, 131072, 0, 0, 196608,
 tile_set = SubResource("TileSet_aj5jk")
 cell_quadrant_size = 128
 format = 2
-layer_0/tile_data = PackedInt32Array(196612, 0, 0, 393220, 0, 0, 393221, 0, 0, 393222, 0, 0)
+layer_0/tile_data = PackedInt32Array(196612, 0, 0, 393220, 0, 0, 393221, 0, 0, 393222, 0, 0, 262155, 0, 0, 327691, 0, 0, 327692, 0, 0, 524297, 0, 0, 65543, 0, 0, 65544, 0, 0)
 
 [node name="Player" parent="." instance=ExtResource("2_18vdt")]
-position = Vector2(224, 352)
+position = Vector2(1208, 584)
 
-[node name="Mob" parent="." instance=ExtResource("3_wjy3y")]
-position = Vector2(-96, 344)
+[node name="Mob" parent="." instance=ExtResource("4_jq603")]
+position = Vector2(576, 664)
