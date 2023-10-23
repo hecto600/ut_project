@@ -11,7 +11,6 @@ texture_filter = 1
 collision_mask = 7
 motion_mode = 1
 script = ExtResource("1_xkeay")
-speed = 700.0
 drag_factor = 0.1
 
 [node name="Sprite2D" type="Sprite2D" parent="."]

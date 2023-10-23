@@ -1,21 +1,23 @@
 extends CharacterBody2D
 
-@export var speed: float = 300.0
-@export_range(0.01, 1.0, 0.01) var drag_factor: float = 0.2
+@onready var detection_area: Area2D = $Pivot/DetectionArea
+@onready var _pivot: Node2D = $Pivot
+@onready var coll_shape: CollisionShape2D = $MobCollisionShape
+@onready var cov: PointLight2D = $Pivot/ConeOfVision
+@onready var timer_detected: Timer = $Pivot/TimerDetected
+@onready var timer_undetected: Timer = $Pivot/TimerUndetected
+@onready var animation_player: AnimationPlayer = $AnimationPlayer
 
+@export var speed: float = 350.0
+@export_range(0.01, 1.0, 0.01) var drag_factor: float = 0.2
 @export var vision_range: float = 500.0
 @export var rays_angle_interval: float = deg_to_rad(3.0)
 @export var rays_amount: int = 30
 
-@onready var detection_area: Area2D = $DetectionArea
-@onready var _pivot: Node2D = $Pivot
-@onready var coll_shape: CollisionShape2D = $MobCollisionShape
-@onready var cov: PointLight2D = $ConeOfVision
-@onready var detection_time: Timer = $DetectionTime
 
 var target: CharacterBody2D
 var ray_list: Array[RayCast2D]
-var points_arc = PackedVector2Array()
+
 var curr_state: int = State.STATE_IDLE
 enum State {
 	STATE_IDLE,
@@ -24,11 +26,15 @@ enum State {
 	STATE_ATTACK,
 	STATE_ALERT,
 }
+
 var found_player := false
-var timer_value: float = 0.5
+var timer_to_detect: float = 0.5
+var timer_to_alert: float = 1.5
+var timer_alert_to_patrol: float = 8.0
 
 func _ready() -> void:
-	detection_time.timeout.connect(_on_detection_time_timeout)
+	timer_detected.timeout.connect(_on_timer_detected_timeout)
+	timer_undetected.timeout.connect(_on_timer_undetected_timeout)
 	_create_rays()
 
 
@@ -49,6 +55,7 @@ func vision_detection() -> void:
 			found_player = true
 			target = ray.get_collider()
 			break
+		
 
 
 func state_machine():
@@ -58,19 +65,38 @@ func state_machine():
 		State.STATE_IDLE:
 			if found_player:
 				curr_state = State.STATE_SEARCH
-				detection_time.start(timer_value)
+				timer_detected.start(timer_to_detect)
 			cov.color = Color(0.0, 1.0, 0.0, 0.5)
 			
 		State.STATE_SEARCH:
 			cov.color = Color(1.0, 1.0, 0.0, 0.5)
 			
 		State.STATE_ATTACK:
+			cov.color = Color(1.0, 0.0, 0.0, 0.5)
 			if found_player:
-				detection_time.start(timer_value + 1.0) # time restarted
-			_set_has_target()
+				timer_detected.start(timer_to_alert) # time restarted
+				_set_has_target()
+		
+		State.STATE_ALERT:
+			cov.color = Color(1.0, 1.0, 0.0, 0.5)
+			if found_player:
+				animation_player.pause()
+				timer_undetected.stop()
+				curr_state = State.STATE_ATTACK
+		
+		State.STATE_PATROL:
+			cov.color = Color(0.0, 1.0, 0.0, 0.5)
 			
+			if found_player:
+				curr_state = State.STATE_SEARCH
+				timer_detected.start(timer_to_detect)
+				animation_player.pause()
 		_:
 			print("UNDEFINED STATE")
+
+
+func _patrol_rotation():
+	pass
 
 
 func _physics_process(_delta: float) -> void: 
@@ -79,24 +105,38 @@ func _physics_process(_delta: float) -> void:
 
 func _set_has_target() -> void:
 	var direction: Vector2 = Vector2.ZERO
+	var desired_velocity: Vector2 = Vector2.ZERO
+	var steering: Vector2 = Vector2.ZERO
+		
 	_pivot.look_at(target.global_position)
 	coll_shape.look_at(target.global_position)
 	
-	cov.look_at(target.global_position)
-	
 	for ray in ray_list:
 		ray.force_raycast_update()
-		
+	
 	direction = to_local(target.global_position).normalized()
-	var desired_velocity: Vector2 = direction * speed
-	var steering = desired_velocity - velocity
-	velocity += steering * drag_factor
-	move_and_slide()
+	var distance = to_local(target.global_position).length() as int
+	
+	if distance > 180:
+		desired_velocity = direction * speed
+		steering = desired_velocity - velocity
+		velocity += steering * drag_factor
+		move_and_slide()
 
 
-func _on_detection_time_timeout():
-	if found_player:
-		cov.color = Color(1.0, 0.0, 0.0, 0.5)
+func _on_timer_detected_timeout() -> void:
+	if found_player and curr_state == State.STATE_SEARCH:
 		curr_state = State.STATE_ATTACK
+	elif curr_state == State.STATE_ATTACK:
+		curr_state = State.STATE_ALERT
+		timer_undetected.start(timer_alert_to_patrol)
+		animation_player.play("state_alert")
 	else:
+		print("Shouldn't exist")
 		curr_state = State.STATE_IDLE
+
+
+func _on_timer_undetected_timeout() -> void:
+	
+	curr_state = State.STATE_PATROL
+	animation_player.play("state_patrol")

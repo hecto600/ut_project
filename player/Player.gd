@@ -1,7 +1,7 @@
 class_name Player
 extends CharacterBody2D
 
-@export var speed: float = 400.0
+@export var speed: float = 450.0
 @export_range(0.01, 1.0, 0.01) var drag_factor: float = 0.12
 
 func _ready():
