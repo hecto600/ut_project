@@ -1,12 +1,13 @@
 extends CharacterBody2D
 
-@onready var detection_area: Area2D = $Pivot/DetectionArea
+@onready var detection_sound_area: Area2D = $Pivot/DetectionArea
 @onready var _pivot: Node2D = $Pivot
 @onready var coll_shape: CollisionShape2D = $MobCollisionShape
 @onready var cov: PointLight2D = $Pivot/ConeOfVision
 @onready var timer_detected: Timer = $Pivot/TimerDetected
 @onready var timer_undetected: Timer = $Pivot/TimerUndetected
 @onready var animation_player: AnimationPlayer = $AnimationPlayer
+@onready var hud: Control = $CanvasLayer/HUD
 
 @export var speed: float = 350.0
 @export_range(0.01, 1.0, 0.01) var drag_factor: float = 0.2
@@ -19,6 +20,8 @@ var target: CharacterBody2D
 var ray_list: Array[RayCast2D]
 
 var curr_state: int = State.STATE_IDLE
+var already_detected: bool = false
+
 enum State {
 	STATE_IDLE,
 	STATE_SEARCH,
@@ -27,14 +30,18 @@ enum State {
 	STATE_ALERT,
 }
 
-var found_player := false
-var timer_to_detect: float = 0.5
-var timer_to_alert: float = 1.5
+var found_player: bool = false
+var in_noise_range: bool = false
+var timer_to_detect: float = 0.75
+var timer_to_detect_sound: float = 2.0
+var timer_to_alert: float = 3.5
 var timer_alert_to_patrol: float = 8.0
 
 func _ready() -> void:
 	timer_detected.timeout.connect(_on_timer_detected_timeout)
 	timer_undetected.timeout.connect(_on_timer_undetected_timeout)
+	detection_sound_area.body_entered.connect(_on_detection_sound_area_body_entered)
+	detection_sound_area.body_exited.connect(_on_detection_sound_area_body_exited)
 	_create_rays()
 
 
@@ -55,7 +62,6 @@ func vision_detection() -> void:
 			found_player = true
 			target = ray.get_collider()
 			break
-		
 
 
 func state_machine():
@@ -66,16 +72,32 @@ func state_machine():
 			if found_player:
 				curr_state = State.STATE_SEARCH
 				timer_detected.start(timer_to_detect)
-			cov.color = Color(0.0, 1.0, 0.0, 0.5)
+			else:
+				cov.color = Color(0.0, 1.0, 0.0, 0.5)
+				hud.visible = false
 			
 		State.STATE_SEARCH:
+			hud.visible = true
+			hud.get_node("Panel/VBox/State mode").text = "Search mode"
+			hud.get_node("Panel/VBox/State timer").text = str(timer_detected.time_left).pad_decimals(2).pad_zeros(2)
+			
 			cov.color = Color(1.0, 1.0, 0.0, 0.5)
+			
 			
 		State.STATE_ATTACK:
 			cov.color = Color(1.0, 0.0, 0.0, 0.5)
+			
 			if found_player:
+				hud.get_node("Panel/VBox/State mode").text = "Attack mode"
 				timer_detected.start(timer_to_alert) # time restarted
 				_set_has_target()
+			
+			if found_player:
+				hud.get_node("Panel/VBox/State timer").text = str(timer_detected.wait_time).pad_decimals(2).pad_zeros(2)
+			else:
+				hud.get_node("Panel/VBox/State timer").text = str(timer_detected.time_left).pad_decimals(2).pad_zeros(2)
+				
+			
 		
 		State.STATE_ALERT:
 			cov.color = Color(1.0, 1.0, 0.0, 0.5)
@@ -83,8 +105,11 @@ func state_machine():
 				animation_player.pause()
 				timer_undetected.stop()
 				curr_state = State.STATE_ATTACK
+				
+			hud.get_node("Panel/VBox/State timer").text = str(timer_undetected.time_left).pad_decimals(2).pad_zeros(2)
 		
 		State.STATE_PATROL:
+			hud.visible = false
 			cov.color = Color(0.0, 1.0, 0.0, 0.5)
 			
 			if found_player:
@@ -95,13 +120,71 @@ func state_machine():
 			print("UNDEFINED STATE")
 
 
-func _patrol_rotation():
-	pass
+func _on_timer_detected_timeout() -> void:
+	if found_player and curr_state == State.STATE_SEARCH:
+		already_detected = true
+		curr_state = State.STATE_ATTACK
+		timer_detected.start(timer_to_alert)
+		hud.get_node("Panel/VBox/State mode").text = "Attack mode"
+		
+	elif curr_state == State.STATE_ATTACK:
+		curr_state = State.STATE_ALERT
+		timer_undetected.start(timer_alert_to_patrol)
+		animation_player.play("state_alert")
+		hud.get_node("Panel/VBox/State mode").text = "Alert mode"
+		target = null
+		
+	elif not already_detected:
+		curr_state = State.STATE_IDLE
+		target = null
+		
+	elif already_detected:
+		curr_state = State.STATE_PATROL
+		animation_player.play("state_patrol")
+		
+	else:
+		print("Shouldn't exist")
 
+func _on_timer_undetected_timeout() -> void:
+	
+	curr_state = State.STATE_PATROL
+	animation_player.play("state_patrol")
+
+
+func _on_detection_sound_area_body_entered(body: CharacterBody2D) -> void:
+	if body is Player and body.speed == body.speed_boost:
+		curr_state = State.STATE_SEARCH
+		in_noise_range = true
+		found_player = true
+		target = body
+		_pivot.look_at(body.global_position)
+		coll_shape.look_at(body.global_position)
+		timer_detected.start(timer_to_detect_sound)
+
+
+func _on_detection_sound_area_body_exited(body: CharacterBody2D) -> void:
+	
+	if body is Player:
+		curr_state = State.STATE_IDLE
+		timer_detected.stop()
+		target = null
+		
+	elif body is Player and already_detected:
+		curr_state = State.STATE_PATROL
+		in_noise_range = false
+		found_player = false
+		timer_detected.stop()
+		target = null
+		
+func _process(delta):
+	pass
 
 func _physics_process(_delta: float) -> void: 
 	state_machine()
-
+	if Input.is_action_just_pressed("move_boost") and in_noise_range:
+		print("why not??")
+		curr_state = State.STATE_SEARCH
+	
 
 func _set_has_target() -> void:
 	var direction: Vector2 = Vector2.ZERO
@@ -124,19 +207,3 @@ func _set_has_target() -> void:
 		move_and_slide()
 
 
-func _on_timer_detected_timeout() -> void:
-	if found_player and curr_state == State.STATE_SEARCH:
-		curr_state = State.STATE_ATTACK
-	elif curr_state == State.STATE_ATTACK:
-		curr_state = State.STATE_ALERT
-		timer_undetected.start(timer_alert_to_patrol)
-		animation_player.play("state_alert")
-	else:
-		print("Shouldn't exist")
-		curr_state = State.STATE_IDLE
-
-
-func _on_timer_undetected_timeout() -> void:
-	
-	curr_state = State.STATE_PATROL
-	animation_player.play("state_patrol")

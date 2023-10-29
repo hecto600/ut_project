@@ -3,7 +3,7 @@
 [ext_resource type="Texture2D" uid="uid://cj4ukoglm1idl" path="res://common/floor.png" id="1_u7yfx"]
 [ext_resource type="PackedScene" uid="uid://cqc4t6kiqjyjm" path="res://player/Player.tscn" id="2_18vdt"]
 [ext_resource type="Texture2D" uid="uid://cxmg6oqg8f7ku" path="res://common/box.png" id="2_k5knd"]
-[ext_resource type="PackedScene" uid="uid://b4ae2qj406or6" path="res://AI/Mob.tscn" id="4_jq603"]
+[ext_resource type="PackedScene" uid="uid://b4ae2qj406or6" path="res://AI/Mob.tscn" id="5_epmyh"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_ogrx1"]
 texture = ExtResource("1_u7yfx")
@@ -52,5 +52,5 @@ layer_0/tile_data = PackedInt32Array(196612, 0, 0, 393220, 0, 0, 393221, 0, 0, 3
 [node name="Player" parent="." instance=ExtResource("2_18vdt")]
 position = Vector2(1208, 584)
 
-[node name="Mob" parent="." instance=ExtResource("4_jq603")]
-position = Vector2(576, 664)
+[node name="Mob" parent="." instance=ExtResource("5_epmyh")]
+position = Vector2(574, 611)
