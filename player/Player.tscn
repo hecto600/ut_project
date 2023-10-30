@@ -1,7 +1,7 @@
 [gd_scene load_steps=4 format=3 uid="uid://cqc4t6kiqjyjm"]
 
 [ext_resource type="Script" path="res://player/Player.gd" id="1_xkeay"]
-[ext_resource type="Texture2D" uid="uid://523xwbb5g3mk" path="res://player/player.png" id="2_s4gcq"]
+[ext_resource type="Texture2D" uid="uid://b5x0kcxgg78e7" path="res://player/player_sprite_sheet.png" id="2_4dvwt"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_k6n3n"]
 size = Vector2(64, 64)
@@ -14,7 +14,8 @@ script = ExtResource("1_xkeay")
 drag_factor = 0.1
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
-texture = ExtResource("2_s4gcq")
+texture = ExtResource("2_4dvwt")
+hframes = 2
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("RectangleShape2D_k6n3n")
