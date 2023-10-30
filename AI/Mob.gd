@@ -37,8 +37,8 @@ var in_noise_range: bool = false
 
 var timer_to_detect: float = 0.75
 var timer_to_detect_sound: float = 2.0
-var timer_to_attack: float = 5.0
-var timer_alert_to_patrol: float = 8.0
+var timer_to_attack: float = 4.0
+var timer_alert_to_patrol: float = 6.0
 
 func _ready() -> void:
 	timer_detected.timeout.connect(_on_timer_detected_timeout)
@@ -81,10 +81,7 @@ func noise_detection() -> void:
 			animation_player.pause()
 			timer_detected.start(timer_to_detect)
 			
-		elif curr_state == State.STATE_ALERT:
-			curr_state = State.STATE_ATTACK
-			animation_player.pause()
-			timer_detected.start(timer_to_attack)
+	
 
 
 func state_machine():
@@ -123,11 +120,12 @@ func state_machine():
 		State.STATE_ALERT:
 			cov.color = Color(1.0, 1.0, 0.0, 0.5)
 			if found_player or heard_player:
+				curr_state = State.STATE_ATTACK
 				animation_player.pause()
 				timer_undetected.stop()
-				curr_state = State.STATE_ATTACK
-				
-			hud.get_node("Panel/VBox/State timer").text = str(timer_undetected.time_left).pad_decimals(2).pad_zeros(2)
+				timer_detected.start(timer_to_attack) 
+			else:
+				hud.get_node("Panel/VBox/State timer").text = str(timer_undetected.time_left).pad_decimals(2).pad_zeros(2)
 		
 		State.STATE_PATROL:
 			
@@ -157,6 +155,7 @@ func _on_timer_detected_timeout() -> void:
 	elif not already_detected:
 		curr_state = State.STATE_IDLE
 		hud.visible = false
+		
 	elif already_detected:
 		curr_state = State.STATE_PATROL
 		animation_player.play("state_patrol")
