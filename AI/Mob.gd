@@ -48,7 +48,7 @@ func _ready() -> void:
 	_create_rays()
 
 func _draw():
-	draw_circle(Vector2.ZERO, hearing_shape.get_shape().radius, Color(Color.AQUA, 0.2))
+	draw_circle(Vector2.ZERO, hearing_shape.get_shape().radius, Color(Color.AQUA, 0.05))
 
 func _create_rays() -> void:
 	for ray_offset in range(-rays_amount / 2 , rays_amount / 2 + 1 ):
@@ -92,21 +92,22 @@ func state_machine():
 		
 	match curr_state:
 		State.STATE_IDLE:
+			hud.get_node("Panel/VBox/State mode").text = "Idle mode"
+			hud.get_node("Panel/VBox/State timer").text = "N.A."
+			cov.color = Color(Color.GREEN, 0.5)
+			
 			if found_player or heard_player:
 				curr_state = State.STATE_SEARCH
 				timer_detected.start(timer_to_detect)
-			else:
-				cov.color = Color(0.0, 1.0, 0.0, 0.5)
 				
 		State.STATE_SEARCH:
-			hud.visible = true
+#			hud.visible = true
 			hud.get_node("Panel/VBox/State mode").text = "Search mode"
 			hud.get_node("Panel/VBox/State timer").text = str(timer_detected.time_left).pad_decimals(2).pad_zeros(2)
-			
-			cov.color = Color(1.0, 1.0, 0.0, 0.5)
+			cov.color = Color(Color.YELLOW, 0.5)
 			
 		State.STATE_ATTACK:
-			cov.color = Color(1.0, 0.0, 0.0, 0.5)
+			cov.color = Color(Color.RED, 0.5)
 			
 			if found_player or heard_player:
 				timer_detected.start(timer_to_attack) # time restarted
@@ -118,7 +119,7 @@ func state_machine():
 				hud.get_node("Panel/VBox/State timer").text = str(timer_detected.time_left).pad_decimals(2).pad_zeros(2)
 		
 		State.STATE_ALERT:
-			cov.color = Color(1.0, 1.0, 0.0, 0.5)
+			cov.color = Color(Color.ORANGE, 0.5)
 			if found_player or heard_player:
 				curr_state = State.STATE_ATTACK
 				animation_player.pause()
@@ -128,8 +129,9 @@ func state_machine():
 				hud.get_node("Panel/VBox/State timer").text = str(timer_undetected.time_left).pad_decimals(2).pad_zeros(2)
 		
 		State.STATE_PATROL:
-			
-			cov.color = Color(0.0, 1.0, 0.0, 0.5)
+			cov.color = Color(Color.GREEN_YELLOW, 0.5)
+			hud.get_node("Panel/VBox/State mode").text = "Patrol mode"
+			hud.get_node("Panel/VBox/State timer").text = "N.A."
 			
 			if found_player or heard_player:
 				curr_state = State.STATE_SEARCH
@@ -154,18 +156,18 @@ func _on_timer_detected_timeout() -> void:
 		
 	elif not already_detected:
 		curr_state = State.STATE_IDLE
-		hud.visible = false
+#		hud.visible = false
 		
 	elif already_detected:
 		curr_state = State.STATE_PATROL
 		animation_player.play("state_patrol")
-		hud.visible = false
+#		hud.visible = false
 
 
 func _on_timer_undetected_timeout() -> void:
 	curr_state = State.STATE_PATROL
 	animation_player.play("state_patrol")
-	hud.visible = false
+#	hud.visible = false
 
 
 func _on_detection_sound_area_body_entered(body: CharacterBody2D) -> void:
